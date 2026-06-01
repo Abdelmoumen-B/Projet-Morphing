@@ -1,0 +1,139 @@
+\documentclass[11pt,a4paper]{article}
+
+% ================= PACKAGES =================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\geometry{margin=2.5cm}
+
+% ================= DOCUMENT =================
+\begin{document}
+	
+	% ================= PAGE DE GARDE =================
+	\begin{titlepage}
+		\centering
+		
+		{\Large \textbf{Université de Versailles Saint-Quentin-en-Yvelines}\par}
+		\vspace{0.5cm}
+		{\large Licence 2 Informatique\par}
+		\vspace{0.5cm}
+		{\large Année universitaire 2025--2026\par}
+		
+		\vspace{2cm}
+		
+		{\Huge \textbf{Projet de morphing d’images}\par}
+		
+		\vspace{2cm}
+		
+		\textbf{Étudiants :}\par
+		Benayoune Abdelmoumen\par
+		Aggoun Dylane\par
+		
+		\vfill
+		\today
+		
+	\end{titlepage}
+	
+	\tableofcontents
+	\newpage
+	
+	% =========================================================
+	\section{Lire et afficher des images contenues dans un fichier}
+	
+	\subsection{Introduction}
+	Nous avons commencé par créer le répertoire du projet ainsi qu’un fichier texte permettant de documenter notre travail. Ce fichier avait pour objectif d’être réécrit proprement en \LaTeX\ par la suite.  
+	La méthode \emph{Diviser pour régner} étant déjà appliquée dans l’énoncé du projet, nous avons suivi les différentes étapes imposées.
+	
+	\subsection{Création de l’arborescence}
+	Les dossiers destinés à contenir les images ont été créés conformément aux consignes du projet, afin d’assurer une organisation claire et structurée des fichiers.
+	
+	\subsection{Makefile et outils externes}
+	Un \texttt{Makefile} a été écrit afin de permettre l’utilisation de l’outil \texttt{ImageMagick}. Celui-ci a été installé sur le système, puis testé à l’aide des commandes définies dans le \texttt{Makefile}.
+	
+	\subsection{Conversion des images}
+	Un fichier \texttt{convertir.c} a été créé. Le programme est écrit en langage C et utilise la fonction \texttt{system} afin d’appeler directement les commandes \texttt{ImageMagick}.  
+	Le \texttt{Makefile} a ensuite été modifié pour permettre la compilation et l’exécution automatique de ce programme.
+	
+	\subsection{Structures de données}
+	N’ayant pas encore une vision claire des structures nécessaires pour la triangulation, nous avons retenu des structures simples :
+	\begin{itemize}
+		\item une structure pour stocker une image (largeur, hauteur, range et pixels composés de trois composantes) ;
+		\item une liste chaînée pour stocker les points de base, contenant les coordonnées $(x,y)$ du point courant et un pointeur vers le point suivant.
+	\end{itemize}
+	
+	\subsection{Programme principal et affichage}
+	Étant donné qu’il était demandé de réaliser un programme pour la conversion mais également d’écrire des fonctions spécifiques, nous avons créé un fichier \texttt{morphing.c} servant de programme principal.  
+	Ce fichier contient des fonctions d’allocation et de désallocation de mémoire ainsi que des fonctions de stockage d’images. Les bibliothèques \texttt{uvsqgraphics} ont été intégrées comme demandé.
+	
+	Une fonction d’affichage a été ajoutée afin de montrer les deux images côte à côte, séparées par un espace de 100 pixels.
+	
+	% =========================================================
+	\section{Sélectionner les couples de points de base entre les deux images}
+	
+	Pour cette étape, nous avons appliqué la méthode \emph{Diviser pour régner} en définissant nos propres règles de fonctionnement :
+	\begin{itemize}
+		\item organisation de la fenêtre en plusieurs zones : image de départ en haut à gauche, image d’arrivée en haut à droite, affichage des coordonnées au centre et boutons en bas ;
+		\item sélection des points par un clic sur l’image de gauche puis sur celle de droite (aucune action n’est effectuée si l’ordre n’est pas respecté) ;
+		\item affichage de points numérotés lors de chaque sélection ;
+		\item bouton \texttt{Sauver} permettant d’écrire les coordonnées dans un fichier \texttt{points.txt} ;
+		\item bouton \texttt{Quitter} pour fermer le programme ;
+		\item suppression d’un couple de points si l’utilisateur clique sur un point déjà existant.
+	\end{itemize}
+	
+	% =========================================================
+	\section{Calcul et génération des images intermédiaires}
+	
+	\subsection{Lecture des points}
+	Une fois les couples de points sauvegardés dans le fichier \texttt{points.txt}, nous avons écrit une fonction permettant de relire ce fichier et de stocker les couples de points dans une structure de données adaptée.
+	
+	\subsection{Structures utilisées}
+	Nous avons défini :
+	\begin{itemize}
+		\item une structure \texttt{Couple} contenant un point dans l’image de départ et un point dans l’image d’arrivée ;
+		\item une structure \texttt{Triangle} contenant trois indices de points.
+	\end{itemize}
+	
+	\subsection{Calcul des points intermédiaires}
+	Les points intermédiaires sont calculés pour un paramètre $\alpha$ donné à l’aide de la formule suivante :
+	\[
+	P_{\text{inter}} = (1 - \alpha) P_{\text{départ}} + \alpha P_{\text{arrivée}}
+	\]
+	
+	\subsection{Triangulation et calcul des pixels}
+	Afin de déformer correctement l’image, une triangulation des points intermédiaires est mise en place. Le rectangle de l’image est d’abord découpé en deux triangles, puis les autres points sont ajoutés progressivement.
+	
+	Plusieurs fonctions mathématiques ont été implémentées :
+	\begin{itemize}
+		\item calcul du déterminant ;
+		\item test d’appartenance d’un point à un triangle ;
+		\item calcul des coordonnées barycentriques.
+	\end{itemize}
+	
+	Pour chaque pixel de l’image intermédiaire, nous déterminons le triangle correspondant, calculons ses coordonnées barycentriques, puis projetons ce pixel dans les triangles des images de départ et d’arrivée. Les couleurs sont ensuite interpolées avec le même paramètre $\alpha$.
+	
+	\subsection{Génération des images}
+	Le processus est répété pour $k$ variant de $0$ à $N$, avec $\alpha = k/N$.  
+	On obtient ainsi $N+1$ images intermédiaires sauvegardées au format PPM dans le dossier \texttt{Images\_Intermediaires} sous la forme \texttt{img\_000.ppm}, \texttt{img\_001.ppm}, etc.
+	
+	% =========================================================
+	\section{Génération du film final}
+	
+	Le programme final s’exécute sous la forme :
+	\begin{center}
+		\texttt{morphing image\_depart.ppm image\_arrivee.ppm N}
+	\end{center}
+	
+	Après la sélection des points, le programme génère automatiquement les images intermédiaires.  
+	La conversion en vidéo est effectuée à l’aide d’un appel système à l’outil \texttt{ffmpeg} :
+	\begin{center}
+		\texttt{ffmpeg -framerate 3 -i Images\_Intermediaires/img\_\%03d.ppm -c:v libx264 -pix\_fmt yuv420p morphing.mp4}
+	\end{center}
+	
+	Cette commande permet de produire une vidéo d’environ dix secondes montrant la transformation progressive de l’image de départ vers l’image d’arrivée. L’ensemble du processus est entièrement automatisé par une seule commande.
+	
+\end{document}

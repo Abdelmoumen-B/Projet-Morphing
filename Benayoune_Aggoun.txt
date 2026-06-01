@@ -1,0 +1,84 @@
+_______________________________________________________
+2 - Lire et afficher des images contenues dans un fichier
+
+
+0.Introduction, nous avons créé le répertoire du projet, et un fichier texte qui documente notre travail que l'on fera en latex plus tard proprement. La méthode Diviser pour régner est deja appliqué donc on suit les etapes données par le projet.
+
+2.On crée les dossiers images comme demandé.
+
+3.On crée le Makefile afin de pouvoir imagemagick. On installe imagemagick et on fait la commande makefile.
+
+4.On crée un fichier convertir.c, on code en c avec la commande "system" afin d'utiliser imagemagick, on modifie le makefile afin de compiler et le lancer.
+
+5.Vu qu'on ne sait pas dans quoi on se lance, on n'a aucune idée de quelle structure de données pour la triangulation pour le moment on a besoin donc on a seulement retenu une structure afin de stocker l'image (largeur, hauteur, range et les pixels composés de trois nombres chacun) et une liste chainée pour les points de base (x et y pour le point actuel et un pointeur vers un autre point).
+
+6.Etant donné qu'il était demandé de "faire un programme (2.1 4.)" pour la conversion mais "d'ecrire une fonction(2.1 6.)" cette fois ci on en deduit qu'il faut creer un fichier "Morphing.c" qui sera notre programme principal. On fait des fonctions allouer la memoire, pour la desallouer, stocker une image. On insère les uvsqgraphics car il nous ait demandé de les utiliser dans le projet.
+
+7. On rajoute une fonction afficher dans morphing.c qui affiche les images cote a cote avec 100 pixels de separation.
+
+
+_______________________________________________________
+3 - Sélectionner les couples de points de base entre les deux images
+
+1.On utilise la méthode diviser pour régner, nous allons faire nos propres etapes :
+- Arranger la fenetre afin d'avoir plusieurs zones : en haut à gauche pour l'image de depart, en haut à droite pour l'image d'arrivée, au millieu pour les coordonnées des points et en bas pour les boutons
+- les clics d'abord à gauche ensuite à droite (ne fait rien si autrement) qui affichent des points numerotés
+- bouton sauver, qui ecrit dans un fichier "points" les coordonnées des points
+- bouton quitter
+- si on clique sur un points deja fait alors ca le supprime et son autre point aussi
+
+
+_______________________________________________________
+4 - Calcul et génération des images intermédiaires
+
+
+1. Une fois les couples de points sauvegardés dans le fichier "points.txt", on a commencé par écrire une fonction permettant de relire ce fichier et de stocker les couples de points dans une structure de données adaptée.
+
+2. On a défini une structure "Couple" contenant un point dans l’image de départ et un point dans l’image d’arrivée, ainsi qu’une structure "Triangle" contenant trois indices de points.
+
+3. On a écrit une fonction permettant de calculer les points intermédiaires pour un paramètre alpha donné, en utilisant la formule :
+   P_inter = (1 - alpha) * P_depart + alpha * P_arrivee
+
+4. Pour pouvoir déformer l’image proprement, on a mis en place une triangulation des points intermédiaires. On commence par découper le rectangle de l’image en deux triangles, puis on ajoute progressivement les autres points en découpant les triangles existants.
+
+5. On a écrit des fonctions mathématiques de base :
+   - calcul de déterminant
+   - test pour savoir si un point est dans un triangle
+   - calcul des coordonnées barycentriques d’un point dans un triangle
+
+6. Pour chaque pixel de l’image intermédiaire, on cherche dans quel triangle il se trouve, puis on calcule ses coordonnées barycentriques dans ce triangle.
+
+7. Grâce à ces coordonnées barycentriques, on projette le pixel dans le triangle correspondant de l’image de départ et dans celui de l’image d’arrivée.
+
+8. On récupère alors la couleur dans l’image de départ et dans l’image d’arrivée, puis on interpole les couleurs avec le même paramètre alpha.
+
+9. On obtient ainsi une image intermédiaire complète correspondant à une valeur donnée de alpha.
+
+10. On répète ce processus pour k variant de 0 à N, avec alpha = k / N, ce qui permet de générer N+1 images intermédiaires.
+
+11. Chaque image générée est sauvegardée au format PPM dans le dossier "Images_Intermediaires" sous la forme img_000.ppm, img_001.ppm, etc.
+
+
+_______________________________________________________
+5 - Génération du film final
+
+
+1. Le programme final est maintenant une commande de la forme :
+   morphing image_depart.ppm image_arrivee.ppm N
+
+2. Le programme commence par charger les deux images passées en paramètres.
+
+3. Il permet ensuite à l’utilisateur de sélectionner interactivement les couples de points et de les sauvegarder dans le fichier "points.txt".
+
+4. Une fois les points définis, le programme génère automatiquement les N+1 images intermédiaires dans le dossier "Images_Intermediaires".
+
+5. Pour transformer ces images en une vidéo, on utilise un appel système à l’outil ffmpeg directement depuis le programme.
+
+6. La commande utilisée est :
+   ffmpeg -framerate 3 -i Images_Intermediaires/img_%03d.ppm -c:v libx264 -pix_fmt yuv420p morphing.mp4
+
+7. Cette commande permet de créer une vidéo d’environ 10 secondes à partir des 30 images générées.
+
+8. Le programme produit ainsi automatiquement le fichier final "morphing.mp4" qui montre la transformation progressive de l’image de départ vers l’image d’arrivée.
+
+9. L’ensemble du processus, depuis la sélection des points jusqu’à la génération du film, est maintenant entièrement automatisé par une seule commande.
